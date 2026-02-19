@@ -1,3 +1,4 @@
+#include <iostream>
 #include "solver.hpp"
 
 namespace solver {
@@ -6,8 +7,21 @@ void solver::iterate_solver(double randomness) {
 
 }
 
-void solver::score_solution() {
+namespace {
 
+double value_function(int block_count, int packer_connections, int compactor_connections) {
+    double value = 0;
+    value += 1.0 * log(block_count);
+    value += 0.2 * log(sqrt(packer_connections * compactor_connections));
+    value -= 0.05 * log((packer_connections - compactor_connections) * (packer_connections - compactor_connections));
+    value = exp(value);
+    return value;
+}
+
+}
+
+double solver::score_solution() {
+    
 }
 
 int solver::count_valid_cram_cannons() {
@@ -23,7 +37,10 @@ int solver::count_valid_cram_cannons() {
         count++;
         std::vector<std::shared_ptr<block::block>> blocks_in_cram_cannon = get_full_cram_cannon(mantlet.value());
         for (std::shared_ptr<block::block> block_ : blocks_in_cram_cannon) {
-            if (!solution.delete_block(block_)) std::abort();
+            if (!solution.erase_block(block_)) {
+                std::cerr << "fatal error in solver::count_valid_cram_cannons; aborting\n";
+                std::abort();
+            }
         }
     }
 }
@@ -43,6 +60,7 @@ bool solver::extend_cram_cannon(std::vector<std::shared_ptr<block::block>>& cann
             if (!solution.block_location_cache.contains(adjacent_block_positions)) continue;
             std::shared_ptr<block::block> adjacent_block = solution.block_location_cache[adjacent_block_positions];
             if (std::find(cannon_blocks.begin(), cannon_blocks.end(), adjacent_block) != cannon_blocks.end()) continue;
+            if (!block_->propogates_cram_connection(adjacent_block)) continue;
             cannon_blocks.push_back(adjacent_block);
             any_new_blocks = true;
         }

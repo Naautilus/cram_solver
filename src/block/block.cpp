@@ -1,5 +1,6 @@
 #include "block.hpp"
 #include <format>
+#include <iostream>
 
 namespace {
 
@@ -42,7 +43,7 @@ std::vector<Eigen::Matrix3i> all_cube_rotations = {
 
 namespace block {
 
-std::vector<Eigen::Vector3i> block_face_positions = {
+std::vector<point::point> block_face_positions = {
     { 1, 0, 0},
     { 0, 1, 0},
     { 0, 0, 1},
@@ -76,6 +77,7 @@ face::face block::face_at_point(point::point point_) {
     if (point_ == point::point(-1, 0, 0)) return faces[3];
     if (point_ == point::point( 0,-1, 0)) return faces[4];
     if (point_ == point::point( 0, 0,-1)) return faces[5];
+    std::cerr << "fatal error in block::face_at_point; aborting\n";
     std::abort();
 }
 
@@ -102,8 +104,20 @@ std::vector<block> block::get_all_rotations() {
 }
 
 bool block::propogates_cram_connection(std::shared_ptr<block> other) {
-    if ((position - other->position).squaredNorm() != 1) continue;
-    
+    point::point relative_position = other->position - position;
+    if (relative_position.squaredNorm() != 1) {
+        std::cerr << "fatal error in block::propogates_cram_connection (point 1); aborting\n";
+        std::abort();
+    }
+    int face_index = std::distance(block_face_positions.begin(), 
+                         std::find(block_face_positions.begin(), block_face_positions.end(), relative_position));
+    if (face_index < 0 || face_index >= 6) {
+        std::cerr << "fatal error in block::propogates_cram_connection (point 2); aborting\n";
+        std::abort();
+    }
+    face::face& face_this = faces[face_index];
+    face::face& face_other = other->faces[(face_index + 3) % 6];
+    return face_this.propogates_cram_connection(face_other);
 }
 
 std::string block::to_string() {

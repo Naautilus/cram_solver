@@ -1,7 +1,9 @@
 #include <algorithm>
+#include <iostream>
 #include "face.hpp"
 
 namespace face {
+
 namespace {
 
 bool propogates_cram_connection_internal(type a, type b) {
@@ -80,12 +82,34 @@ bool propogates_cram_connection_internal(type a, type b) {
     }
 
     // should not be reached with any valid combination of face types
+    std::cerr << "fatal error in propogates_cram_connection_internal; aborting\n";
     std::abort();
 }
 
-}
+bool is_pellet_connection_internal(type a, type b) {
+    if (a > b) std::swap(a, b);
+    if (a == packer_payload && b == pellet) return true;
+    return false;
 }
 
-bool face::face::propogates_cram_connection(face other) {
+bool is_compactor_connection_internal(type a, type b) {
+    if (a > b) std::swap(a, b);
+    if (a == packer_payload && b == compactor) return true;
+    return false;
+}
+
+}
+
+bool face::propogates_cram_connection(face other) {
     return propogates_cram_connection_internal(type_, other.type_);
+}
+
+bool face::is_pellet_connection(face other) {
+    return is_pellet_connection_internal(type_, other.type_);
+}
+
+bool face::is_compactor_connection(face other) {
+    return is_compactor_connection_internal(type_, other.type_);
+}
+
 }

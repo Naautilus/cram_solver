@@ -20,6 +20,8 @@ struct face {
         type_ = type__;
     }
     bool propogates_cram_connection(face other);
+    bool is_pellet_connection(face other);
+    bool is_compactor_connection(face other);
 };
 
 }

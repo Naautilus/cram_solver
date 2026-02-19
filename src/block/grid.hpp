@@ -21,7 +21,8 @@ struct grid {
     std::vector<std::shared_ptr<block>> find_blocks_of_type(type type_);
     std::optional<std::shared_ptr<block>> get_block(point::point position);
     void set_block(std::shared_ptr<block> block_);
-    bool delete_block(std::shared_ptr<block> block_); // returns true if a block was deleted
+    bool erase_block(std::shared_ptr<block> block_); // INVALIDATES INDICES! Do not iterate over the list with this.
+    bool replace_block(std::shared_ptr<block> block_old, std::shared_ptr<block> block_new); // returns true if a block was replaced
 
     private:
     void update_cache();

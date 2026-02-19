@@ -68,15 +68,26 @@ std::optional<std::shared_ptr<block>> grid::get_block(point::point position) {
 
 void grid::set_block(std::shared_ptr<block> block_) {
     std::optional<std::shared_ptr<block>> block_at_point = get_block(block_->position);
-    if (block_at_point.has_value()) delete_block(block_at_point.value());
-    blocks.push_back(block_);
+    if (block_at_point.has_value())
+        replace_block(block_at_point.value(), block_);
+    else
+        blocks.push_back(block_);
     update_cache();
 }
 
-bool grid::delete_block(std::shared_ptr<block> block_) {
+bool grid::erase_block(std::shared_ptr<block> block_) {
     auto location = std::find(blocks.begin(), blocks.end(), block_);
     if (location == blocks.end()) return false;
     blocks.erase(location);
+    update_cache();
+    return true;
+}
+
+bool grid::replace_block(std::shared_ptr<block> block_old, std::shared_ptr<block> block_new) {
+    auto location = std::find(blocks.begin(), blocks.end(), block_old);
+    if (location == blocks.end()) return false;
+    int index = std::distance(blocks.begin(), location);
+    blocks[index] = block_new;
     update_cache();
     return true;
 }

@@ -84,6 +84,18 @@ TEST_CASE("Test grid get, set, delete operations") {
     REQUIRE(grid_.get_block(point::point(-1, 0, 0)).has_value() == false);
     REQUIRE(grid_.get_block(point::point( 0, 1, 0)).has_value() == false);
     REQUIRE(grid_.get_block(point::point( 0,-1, 0)).has_value() == false);
+
+    grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 2), block::type::connector_2, face::type::connector_blank)));
+    grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 2), block::type::connector_3, face::type::connector)));
+    REQUIRE(grid_.get_block(point::point(0, 0, 2)).has_value() == true);
+    REQUIRE(grid_.get_block(point::point(0, 0, 2)).value()->position == point::point(0, 0, 2));
+    REQUIRE(grid_.get_block(point::point(0, 0, 2)).value()->type_ == block::connector_3);
+
+    grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 2), block::type::connector_2, face::type::connector_blank)));
+    std::shared_ptr<block::block> same_block_change_but_without_getting = 
+                                        std::make_shared<block::block>(block::block(point::point(0, 0, 2), block::type::connector_3, face::type::connector));
+    REQUIRE(same_block_change_but_without_getting->position == point::point(0, 0, 2));
+    REQUIRE(same_block_change_but_without_getting->type_ == block::connector_3);
 }
 
 TEST_CASE("Block rotations work as expected") {
@@ -128,6 +140,31 @@ TEST_CASE("Block rotations work as expected") {
     }
 }
 
+TEST_CASE("Test set_block does not invalidate indices") {
+    {
+        block::grid grid0;
+        grid0.add_box(point::point(-1,-1,-1), point::point( 3, 3, 3));
+        for (std::shared_ptr<block::block> block_ : grid0.blocks) {
+            block_->type_ = (block::type)3;
+            block_->faces = std::vector<face::face>(6, (face::type)3);
+        }
+        
+        block::grid grid1;
+        grid1.add_box(point::point(-1,-1,-1), point::point( 3, 3, 3));
+        for (std::shared_ptr<block::block> block_ : grid1.blocks) {
+            grid1.set_block(std::make_shared<block::block>(block::block(block_->position, (block::type)3, (face::type)3)));
+        }
+        
+        REQUIRE(grid0.blocks.size() == grid1.blocks.size());
+        for (int i = 0; i < grid0.blocks.size(); i++) {
+            REQUIRE(grid0.blocks[i]->position == grid1.blocks[i]->position);
+            for (int j = 0; j < 6; j++) {
+                REQUIRE(grid0.blocks[i]->faces[j].type_ == grid1.blocks[i]->faces[j].type_);
+            }
+        }
+    }
+}
+
 TEST_CASE("Test extend_cram_cannon") {
     {
         block::grid grid_;
@@ -146,9 +183,11 @@ TEST_CASE("Test extend_cram_cannon") {
     {
         block::grid grid_;
         grid_.add_box(point::point(-1,-1,-1), point::point( 3, 3, 3));
+
         for (std::shared_ptr<block::block> block_ : grid_.blocks) {
-            grid_.set_block(std::make_shared<block::block>(block::block(block_->position, (block::type)(rand() % 10), (face::type)(rand() % 10))));
+            grid_.set_block(std::make_shared<block::block>(block::block(block_->position, (block::type)4, (face::type)4)));
         }
+        
         solver::solver solver_;
         solver_.solution = grid_;
         std::vector<std::shared_ptr<block::block>> cram_cannon = {grid_.get_block(point::point(0, 0, 0)).value()};
@@ -159,6 +198,46 @@ TEST_CASE("Test extend_cram_cannon") {
         REQUIRE(cram_cannon.size() == 27 - 8);
         solver_.extend_cram_cannon(cram_cannon);
         REQUIRE(cram_cannon.size() == 27);
+    }
+    {
+        block::grid grid_;
+        grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 0), (block::type)1, face::connector)));
+        grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 1), (block::type)2, face::none)));
+        grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 2), (block::type)3, face::connector)));
+        solver::solver solver_;
+        solver_.solution = grid_;
+        std::vector<std::shared_ptr<block::block>> cram_cannon = {grid_.get_block(point::point(0, 0, 0)).value()};
+        REQUIRE(cram_cannon.size() == 1);
+        solver_.extend_cram_cannon(cram_cannon);
+        REQUIRE(cram_cannon.size() == 1);
+        solver_.extend_cram_cannon(cram_cannon);
+        REQUIRE(cram_cannon.size() == 1);
+        solver_.extend_cram_cannon(cram_cannon);
+        REQUIRE(cram_cannon.size() == 1);
+    }
+    {
+        block::grid grid_;
+        grid_.add_box(point::point(-1,-1,-1), point::point( 3, 3, 3));
+        for (std::shared_ptr<block::block> block_ : grid_.blocks) {
+            if (block_->position.squaredNorm() == 3)
+                grid_.set_block(std::make_shared<block::block>(block::block(block_->position, (block::type)(rand() % 10), face::none)));
+            else
+                grid_.set_block(std::make_shared<block::block>(block::block(block_->position, (block::type)(rand() % 10), face::connector)));
+        }
+        solver::solver solver_;
+        solver_.solution = grid_;
+        std::vector<std::shared_ptr<block::block>> cram_cannon = {grid_.get_block(point::point(0, 0, 0)).value()};
+        REQUIRE(cram_cannon.size() == 1);
+        solver_.extend_cram_cannon(cram_cannon);
+        REQUIRE(cram_cannon.size() == 1 + 6);
+        solver_.extend_cram_cannon(cram_cannon);
+        REQUIRE(cram_cannon.size() == 27 - 8);
+        solver_.extend_cram_cannon(cram_cannon);
+        REQUIRE(cram_cannon.size() == 27 - 8);
+        solver_.extend_cram_cannon(cram_cannon);
+        REQUIRE(cram_cannon.size() == 27 - 8);
+        solver_.extend_cram_cannon(cram_cannon);
+        REQUIRE(cram_cannon.size() == 27 - 8);
     }
 
     
