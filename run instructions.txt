@@ -1,0 +1,70 @@
+[Note: These instructions are just notes for me, this is not meant to be a README, though you can use the commands below to compile source using MSYS2 MinGW64.]
+
+to compile, open MSYS2 MinGW64 and enter the commands below.
+
+when at most files are changed:
+[run from /cram_solver]
+cmake --build build_release
+cmake --build build_debug
+[or run from directory directly]
+cmake --build .
+
+when (re)creating the /build_[...]/ directory or changing CMakeLists.txt:
+[run from /cram_solver]
+cmake -G "MinGW Makefiles" -B build_release -DCMAKE_BUILD_TYPE=Release .
+cmake -G "MinGW Makefiles" -B build_debug -DCMAKE_BUILD_TYPE=Debug .
+
+
+
+
+[run from /cram_solver/build_[...]] for all the rest
+
+to use address sanitizer use drmemory.exe -- ./main.exe
+(replace the -g with -gdwarf-2 to have the right debugging format for line numbers to show)
+
+to start xperf (admin): xperf -on PROC_THREAD+LOADER+PROFILE -f profile.etl -stackwalk Profile
+
+or: xperf -start "NT Kernel Logger" -on PROC_THREAD+LOADER+PROFILE -stackwalk Profile
+
+
+to start recording with xperf: ./main.exe 
+
+to stop xperf (method 1): xperf.exe -stop my_trace -stop -d merged_trace.etl
+
+to stop xperf (method 2): xperf -d trace.etl
+
+
+gdb get object inside shared_ptr:
+print (the_shared_ptr._M_t)
+then take the address of [0]:
+print *(T*)0x12345678
+^ that is the object
+
+use Very Sleepy to measure time
+
+use procdump with "procdump64.exe -t main.exe" to make postmortem dumps in .dmp,
+which WinDbg can open, which can read the failing function upon segfault but not the line numbers
+
+
+how to log mutex events in gdb:
+copy paste all the below
+
+break WaitForSingleObject
+y
+commands
+    silent
+    #finish
+    if $rax == 0
+        printf "[LOCK ACQUIRED] Thread ID=%u", (unsigned int) GetCurrentThreadId()
+    else
+        printf "[LOCK ATTEMPT] Thread ID=%u", (unsigned int) GetCurrentThreadId()
+    end
+    continue
+end
+break ReleaseMutex
+y
+commands
+    silent
+    printf "[LOCK RELEASED] Thread ID=%u", (unsigned int) GetCurrentThreadId()
+    continue
+end
