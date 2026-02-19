@@ -19,6 +19,8 @@
 
 namespace block {
 
+extern std::vector<Eigen::Vector3i> block_face_positions;
+
 enum type {
     air,
     mantlet,
@@ -40,11 +42,12 @@ struct block {
     point::point position{0, 0, 0};
     std::vector<face::face> faces;
     type type_;
-    block();
-    block(type, std::vector<face::face>);
-    block(type, face::face); // fills all 6 faces with provided face
+    block(point::point position);
+    block(point::point position, type type_, std::vector<face::face> faces_);
+    block(point::point position, type type_, face::face face_); // fills all 6 faces with provided face
     face::face face_at_point(point::point);
     std::vector<block> get_all_rotations();
+    bool propogates_cram_connection(std::shared_ptr<block::block> other);
     std::string to_string();
 };
 

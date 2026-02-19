@@ -3,15 +3,6 @@
 
 namespace {
 
-std::vector<Eigen::Vector3i> all_cube_faces = {
-    { 1, 0, 0},
-    { 0, 1, 0},
-    { 0, 0, 1},
-    {-1, 0, 0},
-    { 0,-1, 0},
-    { 0, 0,-1},
-};
-
 std::vector<Eigen::Matrix3i> all_cube_rotations = {
         
     (Eigen::Matrix3i() <<  1, 0, 0,   0, 1, 0,   0, 0, 1).finished(),
@@ -51,17 +42,29 @@ std::vector<Eigen::Matrix3i> all_cube_rotations = {
 
 namespace block {
 
-block::block() {
+std::vector<Eigen::Vector3i> block_face_positions = {
+    { 1, 0, 0},
+    { 0, 1, 0},
+    { 0, 0, 1},
+    {-1, 0, 0},
+    { 0,-1, 0},
+    { 0, 0,-1},
+};
+
+block::block(point::point position_) {
+    position = position_;
     type_ = air;
     faces = std::vector<face::face>(6, face::none);
 }
 
-block::block(type type__, face::face face_) {
+block::block(point::point position_, type type__, face::face face_) {
+    position = position_;
     type_ = type__;
     faces = std::vector<face::face>(6, face_);
 }
 
-block::block(type type__, std::vector<face::face> faces_) {
+block::block(point::point position_, type type__, std::vector<face::face> faces_) {
+    position = position_;
     type_ = type__;
     faces = faces_;
 }
@@ -82,7 +85,7 @@ std::vector<block> block::get_all_rotations() {
     for (Eigen::Matrix3i rotation : all_cube_rotations) {
 
         std::vector<Eigen::Vector3i> face_positions_rotated;
-        for (Eigen::Vector3i face_position : all_cube_faces) {
+        for (Eigen::Vector3i face_position : block_face_positions) {
             face_positions_rotated.push_back(rotation * face_position);
         }
 
@@ -91,11 +94,16 @@ std::vector<block> block::get_all_rotations() {
             faces_.push_back(face_at_point(face_position));
         }
 
-        output.push_back(block(type_, faces_));
+        output.push_back(block(point::point(0, 0, 0), type_, faces_));
 
     }
 
     return output;
+}
+
+bool block::propogates_cram_connection(std::shared_ptr<block> other) {
+    if ((position - other->position).squaredNorm() != 1) continue;
+    
 }
 
 std::string block::to_string() {

@@ -23,5 +23,9 @@ std::vector<point> points_on_faces(point position) {
         position + point( 0, 0,-1),
     };
 }
+size_t point_hasher::operator()(const point& point_) const
+{
+    return std::hash<int>()(point_.x()) ^ (std::hash<int>()(point_.y()) << 1) ^ (std::hash<int>()(point_.z()) << 2);
+}
 
 }
