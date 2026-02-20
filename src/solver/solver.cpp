@@ -9,34 +9,41 @@ void solver::iterate_solver(double randomness) {
 
 namespace {
 
-double value_function(int block_count, int packer_connections, int compactor_connections) {
+// value function visualiation available at https://www.desmos.com/3d/xdjscswtnt
+
+double value_function(int blocks, int pellets, int compactors) {
     double value = 0;
-    value += 1.0 * log(block_count);
-    value += 0.2 * log(sqrt(packer_connections * compactor_connections));
-    value -= 0.05 * log((packer_connections - compactor_connections) * (packer_connections - compactor_connections));
-    value = exp(value);
+    value += 1.0 * sqrt(blocks);
+    value += 0.15 * sqrt(pellets * compactors);
     return value;
 }
 
 }
 
-double solver::score_solution() {
-    
+double solver::score_current_solution() {
+    std::vector<cannon::metrics> all_metrics = get_all_cram_cannon_metrics();
+    double score;
+    for (cannon::metrics metrics_ : all_metrics) {
+        score += value_function(metrics_.block_count, metrics_.pellet_connections, metrics_.compactor_connections);
+    }
+    return score;
 }
 
-int solver::count_valid_cram_cannons() {
-    int count = 0;
+std::vector<cannon::metrics> solver::get_all_cram_cannon_metrics() {
+    std::vector<cannon::metrics> output;
     block::grid original_solution_state = solution;
 
     while(true) {
         std::optional<std::shared_ptr<block::block>> mantlet = solution.find_first_block_of_type(block::mantlet);
         if (!mantlet.has_value()) {
             solution = original_solution_state;
-            return count;
+            return output;
         }
-        count++;
-        std::vector<std::shared_ptr<block::block>> blocks_in_cram_cannon = get_full_cram_cannon(mantlet.value());
-        for (std::shared_ptr<block::block> block_ : blocks_in_cram_cannon) {
+        //std::cout << "etnering get_full_cram_cannon\n";
+        cannon::cannon cannon_ = get_full_cram_cannon(mantlet.value());
+        //std::cout << "exiting get_full_cram_cannon\n";
+        output.push_back(cannon_.get_metrics());
+        for (std::shared_ptr<block::block> block_ : cannon_.blocks) {
             if (!solution.erase_block(block_)) {
                 std::cerr << "fatal error in solver::count_valid_cram_cannons; aborting\n";
                 std::abort();
@@ -45,24 +52,35 @@ int solver::count_valid_cram_cannons() {
     }
 }
 
-std::vector<std::shared_ptr<block::block>> solver::get_full_cram_cannon(std::shared_ptr<block::block> origin) {
-    std::vector<std::shared_ptr<block::block>> cannon_blocks = {origin};
+cannon::cannon solver::get_full_cram_cannon(std::shared_ptr<block::block> origin) {
+    cannon::cannon cannon_{{origin}};
     while(true) {
-        if (!extend_cram_cannon(cannon_blocks))
-            return cannon_blocks;
+        //std::cout << "entering extend_cram_cannon\n";
+        if (!extend_cram_cannon(cannon_))
+            return cannon_;
+        //std::cout << "exiting extend_cram_cannon\n";
     };
 }
 
-bool solver::extend_cram_cannon(std::vector<std::shared_ptr<block::block>>& cannon_blocks) {
+bool solver::extend_cram_cannon(cannon::cannon& cannon_) {
     bool any_new_blocks = false;
-    for (std::shared_ptr<block::block> block_ : cannon_blocks) {
-        for (point::point adjacent_block_positions : point::points_on_faces(block_->position)) {
-            if (!solution.block_location_cache.contains(adjacent_block_positions)) continue;
-            std::shared_ptr<block::block> adjacent_block = solution.block_location_cache[adjacent_block_positions];
-            if (std::find(cannon_blocks.begin(), cannon_blocks.end(), adjacent_block) != cannon_blocks.end()) continue;
-            if (!block_->propogates_cram_connection(adjacent_block)) continue;
-            cannon_blocks.push_back(adjacent_block);
+    // 7 here represents how many times bigger the vector can grow in a single cycle.
+    // This is a lazy way to make sure the vector never gets moved mid-loop.
+    cannon_.blocks.reserve(cannon_.blocks.size()*7); 
+    for (std::shared_ptr<block::block> block_ : cannon_.blocks) {
+        for (point::point adjacent_block_position : point::points_on_faces(block_->position)) {
+
+            auto optional_adjacent_block = solution.get_block(adjacent_block_position);
+            if (!optional_adjacent_block.has_value()) continue;
+            std::shared_ptr<block::block> adjacent_block = optional_adjacent_block.value();
+            
+            if (std::find(cannon_.blocks.begin(), cannon_.blocks.end(), adjacent_block) != cannon_.blocks.end()) continue;
+
+            if (!block_->check_for_relation(adjacent_block, face::connection)) continue;
+            
+            cannon_.blocks.push_back(adjacent_block);
             any_new_blocks = true;
+            
         }
     }
     return any_new_blocks;

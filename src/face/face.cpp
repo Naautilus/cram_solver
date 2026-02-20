@@ -100,16 +100,16 @@ bool is_compactor_connection_internal(type a, type b) {
 
 }
 
-bool face::propogates_cram_connection(face other) {
-    return propogates_cram_connection_internal(type_, other.type_);
-}
-
-bool face::is_pellet_connection(face other) {
-    return is_pellet_connection_internal(type_, other.type_);
-}
-
-bool face::is_compactor_connection(face other) {
-    return is_compactor_connection_internal(type_, other.type_);
+bool face::check_for_relation(face other, relation relation_) {
+    switch(relation_) {
+        case connection:
+            return propogates_cram_connection_internal(type_, other.type_);
+        case pellet_packing:
+            return is_pellet_connection_internal(type_, other.type_);
+        case compactor_packing:
+            return is_compactor_connection_internal(type_, other.type_);
+        default: std::abort();
+    }
 }
 
 }

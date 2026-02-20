@@ -103,21 +103,21 @@ std::vector<block> block::get_all_rotations() {
     return output;
 }
 
-bool block::propogates_cram_connection(std::shared_ptr<block> other) {
+bool block::check_for_relation(std::shared_ptr<block> other, face::relation relation_) {
     point::point relative_position = other->position - position;
     if (relative_position.squaredNorm() != 1) {
-        std::cerr << "fatal error in block::propogates_cram_connection (point 1); aborting\n";
+        std::cerr << "fatal error in block::check_for_interaction (point 1); aborting\n";
         std::abort();
     }
     int face_index = std::distance(block_face_positions.begin(), 
                          std::find(block_face_positions.begin(), block_face_positions.end(), relative_position));
     if (face_index < 0 || face_index >= 6) {
-        std::cerr << "fatal error in block::propogates_cram_connection (point 2); aborting\n";
+        std::cerr << "fatal error in block::check_for_interaction (point 2); aborting\n";
         std::abort();
     }
     face::face& face_this = faces[face_index];
     face::face& face_other = other->faces[(face_index + 3) % 6];
-    return face_this.propogates_cram_connection(face_other);
+    return face_this.check_for_relation(face_other, relation_);
 }
 
 std::string block::to_string() {

@@ -39,7 +39,7 @@ void grid::add_cylinder(point::point position, int diameter, int height) {
 
 std::optional<std::shared_ptr<block>> grid::find_first_block_of_type(type type_) {
     for (std::shared_ptr<block> block_ : blocks) {
-        if (block_->type_ = type_) return std::make_optional<std::shared_ptr<block>>(block_);
+        if (block_->type_ == type_) return std::make_optional<std::shared_ptr<block>>(block_);
     }
     return std::nullopt;
 }
@@ -48,7 +48,7 @@ std::optional<std::shared_ptr<block>> grid::find_first_block_of_type(type type_)
 std::vector<std::shared_ptr<block>> grid::find_blocks_of_type(type type_) {
     std::vector<std::shared_ptr<block>> output;
     for (std::shared_ptr<block> block_ : blocks) {
-        if (block_->type_ = type_) output.push_back(block_);
+        if (block_->type_ == type_) output.push_back(block_);
     }
     return output;
 }

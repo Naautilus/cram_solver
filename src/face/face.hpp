@@ -14,14 +14,18 @@ enum type {
     pellet,
 };
 
+enum relation {
+    connection,
+    pellet_packing,
+    compactor_packing
+};
+
 struct face {
     type type_;
     face(type type__) {
         type_ = type__;
     }
-    bool propogates_cram_connection(face other);
-    bool is_pellet_connection(face other);
-    bool is_compactor_connection(face other);
+    bool check_for_relation(face other, relation relation_);
 };
 
 }

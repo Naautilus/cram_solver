@@ -166,6 +166,16 @@ TEST_CASE("Test set_block does not invalidate indices") {
 }
 
 TEST_CASE("Test extend_cram_cannon") {
+    /*
+     * 7 tests:
+     *  - make a fully connectible 1x1x3 pillar: test for size 1, then 2, then 3 as the cram extends
+     *  - make a fully connectible 3x3x3 box: test for sizes {1, 1+6, 27-8, 27}
+     *  - Test 1 but with an air block in the middle of the pillar: size stays at 1
+     *  - Test 2 but with an air block at each of the 8 corners: size stays at 27-8
+     *  - make a 3x3x3 box with an air gap in the center: test for sizes {1, 5, 13, 21, 26} as the cram extends from (1, 0, 0)
+     *  - make a 1x1x3 pillar of connectors with an empty face on +Z: size stays at 1
+     *  - make a 1x1x3 pillar of connectors with an empty face on +X,+Y,-X,-Y: test for sizes {1, 2, 3}
+    */
     {
         block::grid grid_;
         grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 0), (block::type)1, face::connector)));
@@ -173,31 +183,31 @@ TEST_CASE("Test extend_cram_cannon") {
         grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 2), (block::type)3, face::connector)));
         solver::solver solver_;
         solver_.solution = grid_;
-        std::vector<std::shared_ptr<block::block>> cram_cannon = {grid_.get_block(point::point(0, 0, 0)).value()};
-        REQUIRE(cram_cannon.size() == 1);
-        solver_.extend_cram_cannon(cram_cannon);
-        REQUIRE(cram_cannon.size() == 2);
-        solver_.extend_cram_cannon(cram_cannon);
-        REQUIRE(cram_cannon.size() == 3);
+        cannon::cannon cannon_ = {{grid_.get_block(point::point(0, 0, 0)).value()}};
+        REQUIRE(cannon_.blocks.size() == 1);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 2);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 3);
     }
     {
         block::grid grid_;
         grid_.add_box(point::point(-1,-1,-1), point::point( 3, 3, 3));
 
         for (std::shared_ptr<block::block> block_ : grid_.blocks) {
-            grid_.set_block(std::make_shared<block::block>(block::block(block_->position, (block::type)4, (face::type)4)));
+            grid_.set_block(std::make_shared<block::block>(block::block(block_->position, (block::type)4, face::connector)));
         }
         
         solver::solver solver_;
         solver_.solution = grid_;
-        std::vector<std::shared_ptr<block::block>> cram_cannon = {grid_.get_block(point::point(0, 0, 0)).value()};
-        REQUIRE(cram_cannon.size() == 1);
-        solver_.extend_cram_cannon(cram_cannon);
-        REQUIRE(cram_cannon.size() == 1 + 6);
-        solver_.extend_cram_cannon(cram_cannon);
-        REQUIRE(cram_cannon.size() == 27 - 8);
-        solver_.extend_cram_cannon(cram_cannon);
-        REQUIRE(cram_cannon.size() == 27);
+        cannon::cannon cannon_ = {{grid_.get_block(point::point(0, 0, 0)).value()}};
+        REQUIRE(cannon_.blocks.size() == 1);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 1 + 6);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 27 - 8);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 27);
     }
     {
         block::grid grid_;
@@ -206,14 +216,14 @@ TEST_CASE("Test extend_cram_cannon") {
         grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 2), (block::type)3, face::connector)));
         solver::solver solver_;
         solver_.solution = grid_;
-        std::vector<std::shared_ptr<block::block>> cram_cannon = {grid_.get_block(point::point(0, 0, 0)).value()};
-        REQUIRE(cram_cannon.size() == 1);
-        solver_.extend_cram_cannon(cram_cannon);
-        REQUIRE(cram_cannon.size() == 1);
-        solver_.extend_cram_cannon(cram_cannon);
-        REQUIRE(cram_cannon.size() == 1);
-        solver_.extend_cram_cannon(cram_cannon);
-        REQUIRE(cram_cannon.size() == 1);
+        cannon::cannon cannon_ = {{grid_.get_block(point::point(0, 0, 0)).value()}};
+        REQUIRE(cannon_.blocks.size() == 1);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 1);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 1);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 1);
     }
     {
         block::grid grid_;
@@ -226,21 +236,348 @@ TEST_CASE("Test extend_cram_cannon") {
         }
         solver::solver solver_;
         solver_.solution = grid_;
-        std::vector<std::shared_ptr<block::block>> cram_cannon = {grid_.get_block(point::point(0, 0, 0)).value()};
-        REQUIRE(cram_cannon.size() == 1);
-        solver_.extend_cram_cannon(cram_cannon);
-        REQUIRE(cram_cannon.size() == 1 + 6);
-        solver_.extend_cram_cannon(cram_cannon);
-        REQUIRE(cram_cannon.size() == 27 - 8);
-        solver_.extend_cram_cannon(cram_cannon);
-        REQUIRE(cram_cannon.size() == 27 - 8);
-        solver_.extend_cram_cannon(cram_cannon);
-        REQUIRE(cram_cannon.size() == 27 - 8);
-        solver_.extend_cram_cannon(cram_cannon);
-        REQUIRE(cram_cannon.size() == 27 - 8);
+        cannon::cannon cannon_ = {{grid_.get_block(point::point(0, 0, 0)).value()}};
+        REQUIRE(cannon_.blocks.size() == 1);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 1 + 6);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 27 - 8);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 27 - 8);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 27 - 8);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 27 - 8);
     }
-
-    
+    {
+        block::grid grid_;
+        grid_.add_box(point::point(-1,-1,-1), point::point( 3, 3, 3));
+        for (std::shared_ptr<block::block> block_ : grid_.blocks) {
+            if (block_->position.squaredNorm() == 0)
+                grid_.set_block(std::make_shared<block::block>(block::block(block_->position, (block::type)(rand() % 10), face::none)));
+            else
+                grid_.set_block(std::make_shared<block::block>(block::block(block_->position, (block::type)(rand() % 10), face::connector)));
+        }
+        solver::solver solver_;
+        solver_.solution = grid_;
+        cannon::cannon cannon_ = {{grid_.get_block(point::point(1, 0, 0)).value()}};
+        REQUIRE(cannon_.blocks.size() == 1);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 5);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 13);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 21);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 26);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 26);
+    }
+    {
+        block::grid grid_;
+        for (int i = 0; i < 3; i++) {
+            grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, i), (block::type)1, {
+                face::connector,
+                face::connector,
+                face::none,
+                face::connector,
+                face::connector,
+                face::connector,
+            })));
+        }
+        solver::solver solver_;
+        solver_.solution = grid_;
+        cannon::cannon cannon_ = {{grid_.get_block(point::point(0, 0, 0)).value()}};
+        REQUIRE(cannon_.blocks.size() == 1);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 1);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 1);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 1);
+    }
+    {
+        block::grid grid_;
+        for (int i = 0; i < 3; i++) {
+            grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, i), (block::type)1, {
+                face::none,
+                face::none,
+                face::connector,
+                face::none,
+                face::none,
+                face::connector,
+            })));
+        }
+        solver::solver solver_;
+        solver_.solution = grid_;
+        cannon::cannon cannon_ = {{grid_.get_block(point::point(0, 0, 0)).value()}};
+        REQUIRE(cannon_.blocks.size() == 1);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 2);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 3);
+        solver_.extend_cram_cannon(cannon_);
+        REQUIRE(cannon_.blocks.size() == 3);
+    }
 }
 
+TEST_CASE("Test get_full_cram_cannon") {
+    // Same 7 tests as "Test extend_cram_cannon", but with extend_cram_cannon replaced with get_full_cram_cannon
+    {
+        block::grid grid_;
+        grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 0), (block::type)1, face::connector)));
+        grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 1), (block::type)2, face::connector)));
+        grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 2), (block::type)3, face::connector)));
+        solver::solver solver_;
+        solver_.solution = grid_;
+        cannon::cannon cannon_ = solver_.get_full_cram_cannon(grid_.get_block(point::point(0, 0, 0)).value());
+        REQUIRE(cannon_.blocks.size() == 3);
+    }
+    {
+        block::grid grid_;
+        grid_.add_box(point::point(-1,-1,-1), point::point( 3, 3, 3));
 
+        for (std::shared_ptr<block::block> block_ : grid_.blocks) {
+            grid_.set_block(std::make_shared<block::block>(block::block(block_->position, (block::type)4, (face::type)4)));
+        }
+        
+        solver::solver solver_;
+        solver_.solution = grid_;
+        cannon::cannon cannon_ = solver_.get_full_cram_cannon(grid_.get_block(point::point(0, 0, 0)).value());
+        REQUIRE(cannon_.blocks.size() == 27);
+    }
+    {
+        block::grid grid_;
+        grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 0), (block::type)1, face::connector)));
+        grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 1), (block::type)2, face::none)));
+        grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 2), (block::type)3, face::connector)));
+        solver::solver solver_;
+        solver_.solution = grid_;
+        cannon::cannon cannon_ = solver_.get_full_cram_cannon(grid_.get_block(point::point(0, 0, 0)).value());
+        REQUIRE(cannon_.blocks.size() == 1);
+    }
+    {
+        block::grid grid_;
+        grid_.add_box(point::point(-1,-1,-1), point::point( 3, 3, 3));
+        for (std::shared_ptr<block::block> block_ : grid_.blocks) {
+            if (block_->position.squaredNorm() == 3)
+                grid_.set_block(std::make_shared<block::block>(block::block(block_->position, (block::type)(rand() % 10), face::none)));
+            else
+                grid_.set_block(std::make_shared<block::block>(block::block(block_->position, (block::type)(rand() % 10), face::connector)));
+        }
+        solver::solver solver_;
+        solver_.solution = grid_;
+        cannon::cannon cannon_ = solver_.get_full_cram_cannon(grid_.get_block(point::point(0, 0, 0)).value());
+        REQUIRE(cannon_.blocks.size() == 27 - 8);
+    }
+    {
+        block::grid grid_;
+        grid_.add_box(point::point(-1,-1,-1), point::point( 3, 3, 3));
+        for (std::shared_ptr<block::block> block_ : grid_.blocks) {
+            if (block_->position.squaredNorm() == 0)
+                grid_.set_block(std::make_shared<block::block>(block::block(block_->position, (block::type)(rand() % 10), face::none)));
+            else
+                grid_.set_block(std::make_shared<block::block>(block::block(block_->position, (block::type)(rand() % 10), face::connector)));
+        }
+        solver::solver solver_;
+        solver_.solution = grid_;
+        cannon::cannon cannon_ = solver_.get_full_cram_cannon(grid_.get_block(point::point(1, 0, 0)).value());
+        REQUIRE(cannon_.blocks.size() == 26);
+    }
+    {
+        block::grid grid_;
+        for (int i = 0; i < 3; i++) {
+            grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, i), (block::type)1, {
+                face::connector,
+                face::connector,
+                face::none,
+                face::connector,
+                face::connector,
+                face::connector,
+            })));
+        }
+        solver::solver solver_;
+        solver_.solution = grid_;
+        cannon::cannon cannon_ = solver_.get_full_cram_cannon(grid_.get_block(point::point(0, 0, 0)).value());
+        REQUIRE(cannon_.blocks.size() == 1);
+    }
+    {
+        block::grid grid_;
+        for (int i = 0; i < 3; i++) {
+            grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, i), (block::type)1, {
+                face::none,
+                face::none,
+                face::connector,
+                face::none,
+                face::none,
+                face::connector,
+            })));
+        }
+        solver::solver solver_;
+        solver_.solution = grid_;
+        cannon::cannon cannon_ = solver_.get_full_cram_cannon(grid_.get_block(point::point(0, 0, 0)).value());
+        REQUIRE(cannon_.blocks.size() == 3);
+    }
+}
+
+TEST_CASE("Test find_first_block_of_type") {
+    { // find a mantlet that exists
+        block::grid grid_;
+        for (int i = 0; i < 100; i++) {
+            grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, i), block::mantlet, face::connector)));
+            auto output = grid_.find_first_block_of_type(block::mantlet);
+            REQUIRE(output.has_value() == true);
+        }
+    }
+    { // don't find a mantlet that doesn't exist
+        block::grid grid_;
+        for (int i = 0; i < 100; i++) {
+            grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, i), block::connector_6, face::connector)));
+            auto output = grid_.find_first_block_of_type(block::mantlet);
+            REQUIRE(output.has_value() == false);
+        }
+    }
+}
+
+TEST_CASE("Test score_current_solution") {
+    { // connectors with no mantlet should not create any cram cannon
+        block::grid grid_;
+        for (int i = 0; i < 100; i++) {
+            grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, i), block::connector_6, face::connector)));
+            solver::solver solver_;
+            solver_.solution = grid_;
+            std::vector<cannon::metrics> all_metrics = solver_.get_all_cram_cannon_metrics();
+            REQUIRE(all_metrics.size() == 0);
+        }
+    }
+    { // connectors with 1 mantlet should create a cram cannon with correct block count, no pellet connections, no compactor connections
+        block::grid grid_;
+        grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 0), block::mantlet, face::connector)));
+        for (int i = 1; i < 100; i++) {
+            grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, i), block::connector_6, face::connector)));
+            solver::solver solver_;
+            solver_.solution = grid_;
+            std::vector<cannon::metrics> all_metrics = solver_.get_all_cram_cannon_metrics();
+            REQUIRE(all_metrics.size() == 1);
+            REQUIRE(all_metrics[0].block_count == i+1);
+            REQUIRE(all_metrics[0].pellet_connections == 0);
+            REQUIRE(all_metrics[0].compactor_connections == 0);
+        }
+    }
+    { // pellets + packers with 1 mantlet should create a cram cannon with correct block count, correct pellet connections, no compactor connections
+        block::grid grid_;
+        grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 0), block::mantlet, face::connector)));
+        for (int i = 1; i < 100; i++) {
+            grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, i), block::connector_6, {
+                face::packer_payload,
+                face::connector,
+                face::connector,
+                face::connector,
+                face::connector,
+                face::connector,
+            })));
+            grid_.set_block(std::make_shared<block::block>(block::block(point::point(1, 0, i), block::connector_6, {
+                face::connector,
+                face::connector,
+                face::connector,
+                face::pellet,
+                face::connector,
+                face::connector,
+            })));
+            solver::solver solver_;
+            solver_.solution = grid_;
+            std::vector<cannon::metrics> all_metrics = solver_.get_all_cram_cannon_metrics();
+            REQUIRE(all_metrics.size() == 1);
+            REQUIRE(all_metrics[0].block_count == 2*i+1);
+            REQUIRE(all_metrics[0].pellet_connections == i);
+            REQUIRE(all_metrics[0].compactor_connections == 0);
+        }
+    }
+    { // compactors + packers with 1 mantlet should create a cram cannon with correct block count, no pellet connections, correct compactor connections
+        block::grid grid_;
+        grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 0), block::mantlet, face::connector)));
+        for (int i = 1; i < 100; i++) {
+            grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, i), block::connector_6, {
+                face::packer_payload,
+                face::connector,
+                face::connector,
+                face::connector,
+                face::connector,
+                face::connector,
+            })));
+            grid_.set_block(std::make_shared<block::block>(block::block(point::point(1, 0, i), block::connector_6, {
+                face::connector,
+                face::connector,
+                face::connector,
+                face::compactor,
+                face::connector,
+                face::connector,
+            })));
+            solver::solver solver_;
+            solver_.solution = grid_;
+            std::vector<cannon::metrics> all_metrics = solver_.get_all_cram_cannon_metrics();
+            REQUIRE(all_metrics.size() == 1);
+            REQUIRE(all_metrics[0].block_count == 2*i+1);
+            REQUIRE(all_metrics[0].pellet_connections == 0);
+            REQUIRE(all_metrics[0].compactor_connections == i);
+        }
+    }
+    { // pellet face on the wrong side should not make a connection
+        block::grid grid_;
+        grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 0), block::mantlet, face::connector)));
+        for (int i = 1; i < 100; i++) {
+            grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, i), block::connector_6, {
+                face::packer_payload,
+                face::connector,
+                face::connector,
+                face::connector,
+                face::connector,
+                face::connector,
+            })));
+            grid_.set_block(std::make_shared<block::block>(block::block(point::point(1, 0, i), block::connector_6, {
+                face::pellet,
+                face::connector,
+                face::connector,
+                face::connector,
+                face::connector,
+                face::connector,
+            })));
+            solver::solver solver_;
+            solver_.solution = grid_;
+            std::vector<cannon::metrics> all_metrics = solver_.get_all_cram_cannon_metrics();
+            REQUIRE(all_metrics.size() == 1);
+            REQUIRE(all_metrics[0].block_count == i+1);
+            REQUIRE(all_metrics[0].pellet_connections == 0);
+            REQUIRE(all_metrics[0].compactor_connections == 0);
+        }
+    }
+    { // compactors + pellets should not make a connection
+        block::grid grid_;
+        grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 0), block::mantlet, face::connector)));
+        for (int i = 1; i < 100; i++) {
+            grid_.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, i), block::connector_6, {
+                face::pellet,
+                face::connector,
+                face::connector,
+                face::connector,
+                face::connector,
+                face::connector,
+            })));
+            grid_.set_block(std::make_shared<block::block>(block::block(point::point(1, 0, i), block::connector_6, {
+                face::connector,
+                face::connector,
+                face::connector,
+                face::compactor,
+                face::connector,
+                face::connector,
+            })));
+            solver::solver solver_;
+            solver_.solution = grid_;
+            std::vector<cannon::metrics> all_metrics = solver_.get_all_cram_cannon_metrics();
+            REQUIRE(all_metrics.size() == 1);
+            REQUIRE(all_metrics[0].block_count == i+1);
+            REQUIRE(all_metrics[0].pellet_connections == 0);
+            REQUIRE(all_metrics[0].compactor_connections == 0);
+        }
+    }
+}
