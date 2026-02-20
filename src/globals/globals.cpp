@@ -9,6 +9,8 @@ block::block forwards_mantlet = block::block(point::point(0, 0, 0), block::mantl
     face::connector,        face::connector,        face::connector
 });
 
+std::mt19937 rng(time(nullptr));
+
 namespace {
 
 std::vector<block::block> blocks_unrotated = {

@@ -14,9 +14,9 @@ int main(int argc, char* argv[]) {
     }
 
     block::grid grid_;
-    grid_.add_box(point::point(-1, -1, -1), point::point(3, 3, 3));
+    grid_.add_cylinder(point::point(-2, -2, 0), 5, 5);
     grid_.set_block(std::make_shared<block::block>(block::block(
-        point::point(0, 0, -1),
+        point::point(0, 0, 0),
         globals::forwards_mantlet.type_,
         globals::forwards_mantlet.faces
     )));
@@ -26,9 +26,10 @@ int main(int argc, char* argv[]) {
 
     int iteration = 0;
     while(true) {
-        solver_.iterate_solver(0.0);
+        bool print = (iteration % 100 == 0);
+        solver_.iterate_solver(1e-4, print);
+        if (print) std::cout << "iteration: " << iteration << "\n";
         iteration++;
-        if (iteration % 1000 == 0) std::cout << "iteration: " << iteration << "\n";
     }
     
 }

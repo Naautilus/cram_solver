@@ -675,3 +675,41 @@ TEST_CASE("Test score_current_solution") {
         REQUIRE(score0 > score1);
     }
 }
+
+TEST_CASE("Test that modify_solution actually changes anything") {
+    globals::initialize_blocks();
+    for (int i = 0; i < 100; i++) {
+        block::grid grid0;
+        grid0.add_box(point::point(-1, -1, -1), point::point(3, 3, 3));
+        grid0.set_block(std::make_shared<block::block>(block::block(
+            point::point(0, 0, -1),
+            globals::forwards_mantlet.type_,
+            globals::forwards_mantlet.faces
+        )));
+    
+        solver::solver solver_;
+        solver_.solution = grid0;
+        solver_.modify_solution();
+        block::grid grid1 = solver_.solution;
+
+        REQUIRE(grid0.blocks.size() == grid1.blocks.size());
+        std::cout << "grid0:\n";
+        for (std::shared_ptr<block::block> block_ : grid0.blocks) {
+            std::cout << block_->to_string() << ", " << block_->position.transpose() << "\n";
+        }
+        std::cout << "grid1:\n";
+        for (std::shared_ptr<block::block> block_ : grid1.blocks) {
+            std::cout << block_->to_string() << ", " << block_->position.transpose() << "\n";
+        }
+        std::cout << "\n\n";
+        bool anything_changed = false;
+        for (int i = 0; i < grid0.blocks.size(); i++) {
+            if (grid0.blocks[i]->position != grid1.blocks[i]->position) anything_changed = true;
+            if (grid0.blocks[i]->type_ != grid1.blocks[i]->type_) anything_changed = true;
+            for (int j = 0; j < 6; j++) {
+                if (grid0.blocks[i]->faces[j].type_ != grid1.blocks[i]->faces[j].type_) anything_changed = true;
+            }
+        }
+        REQUIRE(anything_changed == true);
+    }
+}

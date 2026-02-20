@@ -8,7 +8,7 @@ namespace solver {
 struct solver {
     block::grid solution;
     solver(){};
-    void iterate_solver(double randomness);
+    void iterate_solver(double randomness, bool print);
     double score_current_solution();
     std::vector<cannon::metrics> get_all_cram_cannon_metrics();
     cannon::cannon get_full_cram_cannon(std::shared_ptr<block::block> origin);
@@ -20,4 +20,3 @@ struct solver {
 };
 
 }
-

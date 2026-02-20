@@ -1,33 +1,34 @@
 #include <iostream>
-#include <random>
 #include "solver.hpp"
 #include "../globals/globals.hpp"
 
 namespace solver {
 
-void solver::iterate_solver(double randomness) {
-    std::mt19937 rng(time(nullptr));
+void solver::iterate_solver(double randomness, bool print) {
     block::grid original_state = solution;
     double original_score = score_current_solution();
-    modify_solution();
+    for (int i = 0; i < 1; i++) modify_solution();
     double modified_score = score_current_solution();
-    bool print = (modified_score > original_score);
+    bool make_change = (modified_score > original_score || (globals::rng() * 1.0 / globals::rng.max()) < randomness);
     
     if (print) {
-        cannon::metrics metrics_ = get_all_cram_cannon_metrics()[0];
-        std::cout << "metrics_.block_count: " << metrics_.block_count << "\n";
-        std::cout << "metrics_.pellet_connections: " << metrics_.pellet_connections << "\n";
-        std::cout << "metrics_.compactor_connections: " << metrics_.compactor_connections << "\n";
+        auto metrics_list = get_all_cram_cannon_metrics();
+        if (metrics_list.size() != 0) {
+            cannon::metrics metrics_ = get_all_cram_cannon_metrics()[0];
+            std::cout << "metrics_.block_count: " << metrics_.block_count << "\n";
+            std::cout << "metrics_.pellet_connections: " << metrics_.pellet_connections << "\n";
+            std::cout << "metrics_.compactor_connections: " << metrics_.compactor_connections << "\n";
+        }
     }
     if (print) {
         for (std::shared_ptr<block::block> block_ : solution.blocks) {
-            std::cout << block_->to_string() << ", " << block_->position.transpose() << "\n";
+            //std::cout << block_->to_string() << ", " << block_->position.transpose() << "\n";
         }
     }
     if (print) std::cout << "original_score: " << original_score << "\n";
     if (print) std::cout << "modified_score: " << modified_score << "\n";
 
-    if (modified_score > original_score || (rng() / rng.max()) > randomness) {
+    if (make_change) {
         // keep modified state
         if (print) std::cout << "keeping modified state\n";
     } else {
@@ -135,17 +136,22 @@ bool solver::extend_cram_cannon(cannon::cannon& cannon_) {
 }
 
 void solver::modify_solution() {
-    std::mt19937 rng(time(nullptr));
     std::shared_ptr<block::block> new_block;
+    int grid_index;
     do {
-        int grid_index = rng() % solution.blocks.size();
-        int blocks_index = rng() % globals::blocks.size();
+        grid_index = globals::rng() % solution.blocks.size();
+        int blocks_index;
+        do {
+            blocks_index = globals::rng() % globals::blocks.size();
+        } while (globals::blocks[blocks_index].type_ == block::air
+              || globals::blocks[blocks_index].type_ == block::mantlet);
         new_block = std::make_shared<block::block>(block::block(
             solution.blocks[grid_index]->position,
             globals::blocks[blocks_index].type_,
             globals::blocks[blocks_index].faces
         ));
-    } while (!find_any_connectible_adjacent_block(new_block).has_value());
+    } while (!find_any_connectible_adjacent_block(new_block).has_value()
+          || solution.blocks[grid_index]->type_ == block::mantlet);
     solution.set_block(new_block);
 }
 
