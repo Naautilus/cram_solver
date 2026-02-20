@@ -24,8 +24,11 @@ int main(int argc, char* argv[]) {
     solver::solver solver_;
     solver_.solution = grid_;
 
+    int iteration = 0;
     while(true) {
         solver_.iterate_solver(0.0);
+        iteration++;
+        if (iteration % 1000 == 0) std::cout << "iteration: " << iteration << "\n";
     }
     
 }

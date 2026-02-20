@@ -9,10 +9,16 @@ void solver::iterate_solver(double randomness) {
     std::mt19937 rng(time(nullptr));
     block::grid original_state = solution;
     double original_score = score_current_solution();
-    for (int i = 0; i < 3; i++) modify_solution();
+    modify_solution();
     double modified_score = score_current_solution();
     bool print = (modified_score > original_score);
     
+    if (print) {
+        cannon::metrics metrics_ = get_all_cram_cannon_metrics()[0];
+        std::cout << "metrics_.block_count: " << metrics_.block_count << "\n";
+        std::cout << "metrics_.pellet_connections: " << metrics_.pellet_connections << "\n";
+        std::cout << "metrics_.compactor_connections: " << metrics_.compactor_connections << "\n";
+    }
     if (print) {
         for (std::shared_ptr<block::block> block_ : solution.blocks) {
             std::cout << block_->to_string() << ", " << block_->position.transpose() << "\n";
@@ -63,9 +69,7 @@ std::vector<cannon::metrics> solver::get_all_cram_cannon_metrics() {
             solution = original_solution_state;
             return output;
         }
-        //std::cout << "etnering get_full_cram_cannon\n";
         cannon::cannon cannon_ = get_full_cram_cannon(mantlet.value());
-        //std::cout << "exiting get_full_cram_cannon\n";
         output.push_back(cannon_.get_metrics());
         for (std::shared_ptr<block::block> block_ : cannon_.blocks) {
             if (!solution.erase_block(block_)) {
@@ -79,45 +83,69 @@ std::vector<cannon::metrics> solver::get_all_cram_cannon_metrics() {
 cannon::cannon solver::get_full_cram_cannon(std::shared_ptr<block::block> origin) {
     cannon::cannon cannon_{{origin}};
     while(true) {
-        //std::cout << "entering extend_cram_cannon\n";
         if (!extend_cram_cannon(cannon_))
             return cannon_;
-        //std::cout << "exiting extend_cram_cannon\n";
     };
+}
+
+std::vector<std::shared_ptr<block::block>> solver::find_connectible_adjacent_blocks(std::shared_ptr<block::block> block_) {
+    std::vector<std::shared_ptr<block::block>> output;
+    for (point::point adjacent_block_position : point::points_on_faces(block_->position)) {
+        auto optional_adjacent_block = find_connectible_adjacent_block_at_position(block_, adjacent_block_position);
+        if (!optional_adjacent_block.has_value()) continue;
+        std::shared_ptr<block::block> adjacent_block = optional_adjacent_block.value();
+        output.push_back(adjacent_block);
+    }
+    return output;
+}
+
+std::optional<std::shared_ptr<block::block>> solver::find_any_connectible_adjacent_block(std::shared_ptr<block::block> block_) {
+    std::vector<std::shared_ptr<block::block>> output;
+    for (point::point adjacent_block_position : point::points_on_faces(block_->position)) {
+        auto optional_adjacent_block = find_connectible_adjacent_block_at_position(block_, adjacent_block_position);
+        if (!optional_adjacent_block.has_value()) continue;
+        std::shared_ptr<block::block> adjacent_block = optional_adjacent_block.value();
+        return adjacent_block;
+    }
+    return std::nullopt;
+}
+
+std::optional<std::shared_ptr<block::block>> solver::find_connectible_adjacent_block_at_position(std::shared_ptr<block::block> block_, point::point adjacent_block_position) {
+    auto optional_adjacent_block = solution.get_block(adjacent_block_position);
+    if (!optional_adjacent_block.has_value()) return std::nullopt;
+    std::shared_ptr<block::block> adjacent_block = optional_adjacent_block.value();
+    if (!block_->check_for_relation(adjacent_block, face::connection)) return std::nullopt;
+    return adjacent_block;
 }
 
 bool solver::extend_cram_cannon(cannon::cannon& cannon_) {
     bool any_new_blocks = false;
     // 7 here represents how many times bigger the vector can grow in a single cycle.
-    // This is a lazy way to make sure the vector never gets moved mid-loop.
+    // This is an easy way to make sure the vector never gets moved mid-loop.
     cannon_.blocks.reserve(cannon_.blocks.size()*7); 
     for (std::shared_ptr<block::block> block_ : cannon_.blocks) {
-        for (point::point adjacent_block_position : point::points_on_faces(block_->position)) {
-
-            auto optional_adjacent_block = solution.get_block(adjacent_block_position);
-            if (!optional_adjacent_block.has_value()) continue;
-            std::shared_ptr<block::block> adjacent_block = optional_adjacent_block.value();
-            
+        std::vector<std::shared_ptr<block::block>> connectible_adjacent_blocks = find_connectible_adjacent_blocks(block_);
+        for (std::shared_ptr<block::block> adjacent_block : connectible_adjacent_blocks) {
             if (std::find(cannon_.blocks.begin(), cannon_.blocks.end(), adjacent_block) != cannon_.blocks.end()) continue;
-
-            if (!block_->check_for_relation(adjacent_block, face::connection)) continue;
-            
             cannon_.blocks.push_back(adjacent_block);
             any_new_blocks = true;
-            
         }
     }
     return any_new_blocks;
 }
+
 void solver::modify_solution() {
     std::mt19937 rng(time(nullptr));
-    int grid_index = rng() % solution.blocks.size();
-    int blocks_index = rng() % globals::blocks.size();
-    std::shared_ptr<block::block> new_block = std::make_shared<block::block>(block::block(
-        solution.blocks[grid_index]->position,
-        globals::blocks[blocks_index].type_,
-        globals::blocks[blocks_index].faces
-    ));
+    std::shared_ptr<block::block> new_block;
+    do {
+        int grid_index = rng() % solution.blocks.size();
+        int blocks_index = rng() % globals::blocks.size();
+        new_block = std::make_shared<block::block>(block::block(
+            solution.blocks[grid_index]->position,
+            globals::blocks[blocks_index].type_,
+            globals::blocks[blocks_index].faces
+        ));
+    } while (!find_any_connectible_adjacent_block(new_block).has_value());
     solution.set_block(new_block);
 }
 

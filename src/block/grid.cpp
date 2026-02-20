@@ -16,7 +16,8 @@ bool grid::add_point(point::point position) {
     if (contains_point(position)) return false;
     std::shared_ptr<block> block_ = std::make_shared<block>(block(position));
     blocks.push_back(block_);
-    update_cache();
+    block_location_cache[position] = block_;
+    //fully_reset_cache();
     return true;
 }
 
@@ -54,7 +55,7 @@ std::vector<std::shared_ptr<block>> grid::find_blocks_of_type(type type_) {
 }
 
 
-void grid::update_cache() {
+void grid::fully_reset_cache() {
     block_location_cache.clear();
     for (std::shared_ptr<block> block_ : blocks) {
         block_location_cache[block_->position] = block_;
@@ -68,18 +69,23 @@ std::optional<std::shared_ptr<block>> grid::get_block(point::point position) {
 
 void grid::set_block(std::shared_ptr<block> block_) {
     std::optional<std::shared_ptr<block>> block_at_point = get_block(block_->position);
-    if (block_at_point.has_value())
+    if (block_at_point.has_value()) {
         replace_block(block_at_point.value(), block_);
-    else
+        return;
+    }
+    else {
         blocks.push_back(block_);
-    update_cache();
+    }
+    //fully_reset_cache();
+    block_location_cache[block_->position] = block_;
 }
 
 bool grid::erase_block(std::shared_ptr<block> block_) {
     auto location = std::find(blocks.begin(), blocks.end(), block_);
     if (location == blocks.end()) return false;
     blocks.erase(location);
-    update_cache();
+    //fully_reset_cache();
+    block_location_cache.erase(block_->position);
     return true;
 }
 
@@ -88,7 +94,8 @@ bool grid::replace_block(std::shared_ptr<block> block_old, std::shared_ptr<block
     if (location == blocks.end()) return false;
     int index = std::distance(blocks.begin(), location);
     blocks[index] = block_new;
-    update_cache();
+    //fully_reset_cache();
+    block_location_cache[block_new->position] = block_new;
     return true;
 }
 

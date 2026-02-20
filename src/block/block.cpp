@@ -77,7 +77,7 @@ face::face block::face_at_point(point::point point_) {
     if (point_ == point::point(-1, 0, 0)) return faces[3];
     if (point_ == point::point( 0,-1, 0)) return faces[4];
     if (point_ == point::point( 0, 0,-1)) return faces[5];
-    std::cerr << "fatal error in block::face_at_point; aborting\n";
+    std::cout << "fatal error in block::face_at_point; aborting\n";
     std::abort();
 }
 
@@ -106,13 +106,13 @@ std::vector<block> block::get_all_rotations() {
 bool block::check_for_relation(std::shared_ptr<block> other, face::relation relation_) {
     point::point relative_position = other->position - position;
     if (relative_position.squaredNorm() != 1) {
-        std::cerr << "fatal error in block::check_for_interaction (point 1); aborting\n";
+        std::cout << "fatal error in block::check_for_interaction (point 1); aborting\n";
         std::abort();
     }
     int face_index = std::distance(block_face_positions.begin(), 
                          std::find(block_face_positions.begin(), block_face_positions.end(), relative_position));
     if (face_index < 0 || face_index >= 6) {
-        std::cerr << "fatal error in block::check_for_interaction (point 2); aborting\n";
+        std::cout << "fatal error in block::check_for_interaction (point 2); aborting\n";
         std::abort();
     }
     face::face& face_this = faces[face_index];

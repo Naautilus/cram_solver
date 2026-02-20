@@ -25,7 +25,7 @@ struct grid {
     bool replace_block(std::shared_ptr<block> block_old, std::shared_ptr<block> block_new); // returns true if a block was replaced
 
     private:
-    void update_cache();
+    void fully_reset_cache();
 
 };
 
