@@ -13,6 +13,7 @@ struct solver {
     std::vector<cannon::metrics> get_all_cram_cannon_metrics();
     cannon::cannon get_full_cram_cannon(std::shared_ptr<block::block> origin);
     bool extend_cram_cannon(cannon::cannon& cannon_);
+    void modify_solution();
 };
 
 }

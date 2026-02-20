@@ -4,6 +4,7 @@
 
 namespace globals {
 
+extern block::block forwards_mantlet;
 extern std::vector<block::block> blocks;
 void initialize_blocks();
 

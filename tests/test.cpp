@@ -439,7 +439,7 @@ TEST_CASE("Test find_first_block_of_type") {
     }
 }
 
-TEST_CASE("Test score_current_solution") {
+TEST_CASE("Test get_all_cram_cannon_metrics") {
     { // connectors with no mantlet should not create any cram cannon
         block::grid grid_;
         for (int i = 0; i < 100; i++) {
@@ -579,5 +579,99 @@ TEST_CASE("Test score_current_solution") {
             REQUIRE(all_metrics[0].pellet_connections == 0);
             REQUIRE(all_metrics[0].compactor_connections == 0);
         }
+    }
+}
+
+TEST_CASE("Test score_current_solution") {
+    { 
+        // create two connector stacks, grid0 and grid1; grid0 always has 1 more block than grid1; its score should always be higher
+        block::grid grid0, grid1;
+        grid0.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 0), block::mantlet, face::connector)));
+        grid1.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 0), block::mantlet, face::connector)));
+        
+        grid0.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 1), block::connector_6, face::connector)));
+        for (int i = 1; i < 100; i++) {
+            grid0.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, i+1), block::connector_6, face::connector)));
+            grid1.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, i), block::connector_6, face::connector)));
+            solver::solver solver0, solver1;
+            solver0.solution = grid0;
+            solver1.solution = grid1;
+            double score0 = solver0.score_current_solution();
+            double score1 = solver1.score_current_solution();
+            REQUIRE(score0 > 0);
+            REQUIRE(score1 > 0);
+            REQUIRE(score0 > score1);
+        }
+        
+        // equalize grid0 and grid1
+        grid1.set_block(std::make_shared<block::block>(block::block(point::point(0, 0, 100), block::connector_6, face::connector)));
+        {
+            solver::solver solver0, solver1;
+            solver0.solution = grid0;
+            solver1.solution = grid1;
+            double score0 = solver0.score_current_solution();
+            double score1 = solver1.score_current_solution();
+            REQUIRE(score0 > 0);
+            REQUIRE(score1 > 0);
+            REQUIRE(score0 == score1);
+        }
+
+        // add a row of packers and compactors to both grid0 and grid1; grid0 always has one more than grid1; grid0 should always have more points
+        // grid1 gets extra connectors to have equal blocks
+        grid1.set_block(std::make_shared<block::block>(block::block(point::point(1, 0, 0), block::connector_6, face::connector)));
+        grid1.set_block(std::make_shared<block::block>(block::block(point::point(2, 0, 0), block::connector_6, face::connector)));
+        for (int i = 0; i < 100; i++) {
+            grid0.set_block(std::make_shared<block::block>(block::block(point::point(1, 0, i), block::packer, {
+                face::packer_payload,
+                face::packer_payload,
+                face::packer_payload,
+                face::packer_base,
+                face::packer_payload,
+                face::packer_payload,
+            })));
+            if (i > 0) {
+                grid1.set_block(std::make_shared<block::block>(block::block(point::point(1, 0, i), block::packer, {
+                    face::packer_payload,
+                    face::packer_payload,
+                    face::packer_payload,
+                    face::packer_base,
+                    face::packer_payload,
+                    face::packer_payload,
+                })));
+            }
+
+            // the ideal balance of pellets and compactors is around 70% compactors past the first 9 pellets
+            face::type type_to_add;
+            if (i < 9)
+                type_to_add = face::pellet;
+            else
+                type_to_add = (fmod((double)i, 1.0/0.7) < 1.0 ? face::compactor : face::pellet);
+
+            grid0.set_block(std::make_shared<block::block>(block::block(point::point(2, 0, i), block::pellet, type_to_add)));
+            if (i > 0) {
+                grid1.set_block(std::make_shared<block::block>(block::block(point::point(2, 0, i), block::compactor, type_to_add)));
+            }
+            solver::solver solver0, solver1;
+            solver0.solution = grid0;
+            solver1.solution = grid1;
+            double score0 = solver0.score_current_solution();
+            double score1 = solver1.score_current_solution();
+            REQUIRE(score0 > 0);
+            REQUIRE(score1 > 0);
+            REQUIRE(score0 > score1);
+        }
+
+        // grid1 gets 50 of its mixed payload blocks replaced with purely compactors, worsening its ratio
+        for (int i = 0; i < 50; i++) {
+            grid1.set_block(std::make_shared<block::block>(block::block(point::point(2, 0, i), block::compactor, face::pellet)));
+        }
+        solver::solver solver0, solver1;
+        solver0.solution = grid0;
+        solver1.solution = grid1;
+        double score0 = solver0.score_current_solution();
+        double score1 = solver1.score_current_solution();
+        REQUIRE(score0 > 0);
+        REQUIRE(score1 > 0);
+        REQUIRE(score0 > score1);
     }
 }

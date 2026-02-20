@@ -4,6 +4,10 @@ namespace globals {
 
 std::vector<block::block> blocks = {};
 
+block::block forwards_mantlet = block::block(point::point(0, 0, 0), block::mantlet, {
+    face::cannon_face,      face::connector,        face::connector,
+    face::connector,        face::connector,        face::connector
+});
 
 namespace {
 
