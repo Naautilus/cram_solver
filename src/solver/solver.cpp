@@ -21,20 +21,7 @@ double solver::iterate_solver(double randomness, bool print) {
     double modified_score = score_current_solution();
     bool make_change = (modified_score > original_score || (globals::rng() * 1.0 / globals::rng.max()) < randomness);
     
-    if (print) {
-        auto metrics_list = get_all_cram_cannon_metrics();
-        if (metrics_list.size() != 0) {
-            cannon::metrics metrics_ = get_all_cram_cannon_metrics()[0];
-            std::cout << "metrics_.block_count: " << metrics_.block_count << "\n";
-            std::cout << "metrics_.pellet_connections: " << metrics_.pellet_connections << "\n";
-            std::cout << "metrics_.compactor_connections: " << metrics_.compactor_connections << "\n";
-        }
-    }
-    if (print) {
-        for (std::shared_ptr<block::block> block_ : solution.blocks) {
-            //std::cout << block_->to_string() << ", " << block_->position.transpose() << "\n";
-        }
-    }
+    if (print) std::cout << get_metrics_string();
     if (print) std::cout << "original_score: " << original_score << "\n";
     if (print) std::cout << "modified_score: " << modified_score << "\n";
 
@@ -167,6 +154,15 @@ void solver::modify_solution() {
     solution.set_block(new_block);
 }
 
-
+std::string solver::get_metrics_string() {
+    std::string output;
+    std::vector<cannon::metrics> metrics_list = get_all_cram_cannon_metrics();
+    for (cannon::metrics metrics_ : metrics_list) {
+        output += "metrics_.block_count: " + std::to_string(metrics_.block_count) + "\n";
+        output += "metrics_.pellet_connections: " + std::to_string(metrics_.pellet_connections) + "\n";
+        output += "metrics_.compactor_connections: " + std::to_string(metrics_.compactor_connections) + "\n";
+    }
+    return output;
+}
 
 }

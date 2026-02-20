@@ -99,4 +99,12 @@ bool grid::replace_block(std::shared_ptr<block> block_old, std::shared_ptr<block
     return true;
 }
 
+std::string grid::to_string() {
+    std::string output;
+    for (std::shared_ptr<block> block_ : blocks) {
+        output += block_->to_string() + "\n";
+    }
+    return output;
+}
+
 }

@@ -23,7 +23,8 @@ struct grid {
     void set_block(std::shared_ptr<block> block_);
     bool erase_block(std::shared_ptr<block> block_); // INVALIDATES INDICES! Do not iterate over the list with this.
     bool replace_block(std::shared_ptr<block> block_old, std::shared_ptr<block> block_new); // returns true if a block was replaced
-
+    std::string to_string();
+    
     private:
     void fully_reset_cache();
 

@@ -122,11 +122,12 @@ bool block::check_for_relation(std::shared_ptr<block> other, face::relation rela
 
 std::string block::to_string() {
     std::string output = std::format("block{}", "{");
-    output += std::format("{:>1}|", (int)type_);
+    output += std::format("{:>2}|", (int)type_);
     for (auto face : faces)
         output += std::format("{:>1} ", (int)face.type_);
     output = output.substr(0, output.size() - 1);
     output += std::format("{}", "}");
+    output += std::format(" @ ({:> 3}{:> 3}{:> 3})", position.x(), position.y(), position.z());
     return output;
 }
 

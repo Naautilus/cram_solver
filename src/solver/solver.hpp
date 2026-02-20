@@ -18,6 +18,7 @@ struct solver {
     std::optional<std::shared_ptr<block::block>> find_connectible_adjacent_block_at_position(std::shared_ptr<block::block> block_, point::point adjacent_block_position);
     bool extend_cram_cannon(cannon::cannon& cannon_);
     void modify_solution();
+    std::string get_metrics_string();
 };
 
 }

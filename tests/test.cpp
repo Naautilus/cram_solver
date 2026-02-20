@@ -7,9 +7,9 @@
 
 TEST_CASE("Test block constructors and print") {
     block::block block_(point::point(0, 0, 0), block::air, face::none);
-    REQUIRE(block_.to_string() == "block{0|0 0 0 0 0 0}");
+    REQUIRE(block_.to_string() == "block{ 0|0 0 0 0 0 0} @ (  0  0  0)");
     block_ = block::block(point::point(0, 0, 0), block::mantlet, {face::none,face::cannon_face,face::connector,face::connector_blank,face::gauge,face::packer_base});
-    REQUIRE(block_.to_string() == "block{1|0 1 2 3 4 5}");
+    REQUIRE(block_.to_string() == "block{ 1|0 1 2 3 4 5} @ (  0  0  0)");
 }
 
 TEST_CASE("Test block::grid's add_point, add_box, and add_cylinder") {
@@ -693,15 +693,6 @@ TEST_CASE("Test that modify_solution actually changes anything") {
         block::grid grid1 = solver_.solution;
 
         REQUIRE(grid0.blocks.size() == grid1.blocks.size());
-        std::cout << "grid0:\n";
-        for (std::shared_ptr<block::block> block_ : grid0.blocks) {
-            std::cout << block_->to_string() << ", " << block_->position.transpose() << "\n";
-        }
-        std::cout << "grid1:\n";
-        for (std::shared_ptr<block::block> block_ : grid1.blocks) {
-            std::cout << block_->to_string() << ", " << block_->position.transpose() << "\n";
-        }
-        std::cout << "\n\n";
         bool anything_changed = false;
         for (int i = 0; i < grid0.blocks.size(); i++) {
             if (grid0.blocks[i]->position != grid1.blocks[i]->position) anything_changed = true;
