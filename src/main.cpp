@@ -4,6 +4,7 @@
 #include "block/block.hpp"
 #include "globals/globals.hpp"
 #include "solver/solver.hpp"
+#include "solver/manager.hpp"
 
 // x forward, y right, z down
 
@@ -21,13 +22,14 @@ int main(int argc, char* argv[]) {
         globals::forwards_mantlet.faces
     )));
 
-    solver::solver solver_;
-    solver_.solution = grid_;
+    solver::manager solver_manager(10, grid_);
+    //solver::solver solver_(grid_);
 
     int iteration = 0;
     while(true) {
         bool print = (iteration % 100 == 0);
-        solver_.iterate_solver(1e-4, print);
+        //solver_.iterate_solver(1e-4, print);
+        solver_manager.iterate_solvers(1e-4, print);
         if (print) std::cout << "iteration: " << iteration << "\n";
         iteration++;
     }

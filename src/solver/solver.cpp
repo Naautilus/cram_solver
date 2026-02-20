@@ -4,7 +4,17 @@
 
 namespace solver {
 
-void solver::iterate_solver(double randomness, bool print) {
+solver::solver(block::grid solution_) {
+    solution = solution_;
+    /*
+    for (std::shared_ptr<block::block> block_ : solution_.blocks) {
+        solution.set_block(std::make_shared<block::block>(block::block(*block_)));
+    }
+    */
+}
+
+
+double solver::iterate_solver(double randomness, bool print) {
     block::grid original_state = solution;
     double original_score = score_current_solution();
     for (int i = 0; i < 1; i++) modify_solution();
@@ -31,9 +41,11 @@ void solver::iterate_solver(double randomness, bool print) {
     if (make_change) {
         // keep modified state
         if (print) std::cout << "keeping modified state\n";
+        return modified_score;
     } else {
         solution = original_state;
         if (print) std::cout << "keeping original state\n";
+        return original_score;
     }
 }
 
